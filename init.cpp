@@ -2,6 +2,7 @@
 
 #include "rend.hpp"
 
+#include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
@@ -58,6 +59,10 @@ Rend::Rend() {
   
   // TODO: Create a debug messenger
   
+  // Create a surface
+  if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create window surface");
+
   // Select a physical device
   uint32_t count_physical_device = 0;
   vkEnumeratePhysicalDevices(instance, &count_physical_device, nullptr);
@@ -81,24 +86,33 @@ Rend::Rend() {
   for (const auto& queue_family_properties: vec_pd_queue_family_properties) {
     if (queue_family_properties.queueFlags & VK_QUEUE_GRAPHICS_BIT)
       qfi_graphics = i;
+    VkBool32 present_support = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
+    if (present_support)
+      qfi_present = i;
     if (queue_family_indices_filled())
       break;
     i++;
   }
 
   // Create logical device
+  std::vector<VkDeviceQueueCreateInfo> vec_ci_queue;
+  std::set<uint32_t> set_unique_qf = {qfi_graphics.value(), qfi_present.value()};
   float queue_priority = 1.0f;
-  VkDeviceQueueCreateInfo ci_device_queue{};
-  ci_device_queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  ci_device_queue.queueFamilyIndex = qfi_graphics.value();
-  ci_device_queue.queueCount = 1;
-  ci_device_queue.pQueuePriorities = &queue_priority;
+  for (uint32_t qfi : set_unique_qf) {
+    VkDeviceQueueCreateInfo ci_device_queue{};
+    ci_device_queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    ci_device_queue.queueFamilyIndex = qfi;
+    ci_device_queue.queueCount = 1;
+    ci_device_queue.pQueuePriorities = &queue_priority;
+    vec_ci_queue.push_back(ci_device_queue);
+  }
 
   VkPhysicalDeviceFeatures device_features{};
   VkDeviceCreateInfo ci_device{};
   ci_device.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  ci_device.pQueueCreateInfos = &ci_device_queue;
-  ci_device.queueCreateInfoCount = 1;
+  ci_device.pQueueCreateInfos = vec_ci_queue.data();
+  ci_device.queueCreateInfoCount = static_cast<uint32_t>(vec_ci_queue.size());
   ci_device.pEnabledFeatures = &device_features;
   ci_device.enabledExtensionCount = 0;
 #ifdef USE_VALIDATION_LAYERS
@@ -112,7 +126,7 @@ Rend::Rend() {
   
   // Get queue handles
   vkGetDeviceQueue(device, qfi_graphics.value(), 0, &queue_graphics);
-  //vkGetDeviceQueue(device, qfi_present.value(), 0, &queue_present);
+  vkGetDeviceQueue(device, qfi_present.value(), 0, &queue_present);
   
   puts("end of init");
 }

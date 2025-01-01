@@ -11,6 +11,7 @@
 #include <array>
 #include <vector>
 #include <optional>
+#include <set>
 
 class Rend {
 public:
@@ -27,6 +28,7 @@ private:
   VkInstance instance;
   VkPhysicalDevice physical_device;
   VkDevice device;
+  VkSurfaceKHR surface;
 
   // Queue stuff
   std::optional<uint32_t> qfi_graphics;
@@ -34,7 +36,7 @@ private:
   VkQueue queue_graphics;
   VkQueue queue_present;
   bool queue_family_indices_filled() {
-    return qfi_graphics.has_value();
+    return qfi_graphics.has_value() && qfi_present.has_value();
   }
 
 };
