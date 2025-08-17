@@ -1,6 +1,6 @@
-CFLAGS = -std=c++17 -O2
+CFLAGS = -std=c++17 -O2 -Iinclude
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lXxf86vm -lXi
-SRC = ${wildcard *.cpp}
+SRC = ${wildcard src/*.cpp}
 
 rend: $(SRC)
 	clang++ $(CFLAGS) -o rend $(SRC) $(LDFLAGS)
