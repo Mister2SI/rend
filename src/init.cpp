@@ -45,12 +45,11 @@ Rend::Rend() {
   instance_ci.pApplicationInfo = &app_info;
   instance_ci.ppEnabledExtensionNames = instance_extensions.data();
   instance_ci.enabledExtensionCount = instance_extensions.size();
-  instance_ci.enabledExtensionCount = 0;
 #if USE_VALIDATION_LAYERS == 1
   instance_ci.ppEnabledLayerNames = validation_layers.data();
   instance_ci.enabledLayerCount = validation_layers.size();
 #else
-  instance_ci.enabledExtensionCount = 0;
+  instance_ci.enabledLayerCount = 0;
 #endif
   if (vkCreateInstance(&instance_ci, nullptr, &instance) != VK_SUCCESS)
     throw std::runtime_error("Failed to create vulkan instance");
